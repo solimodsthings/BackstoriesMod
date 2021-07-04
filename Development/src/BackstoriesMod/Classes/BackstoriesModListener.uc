@@ -5,19 +5,23 @@ class BackstoriesModListener extends EventListener;
 enum Origin
 {
     Default, // Basically humans
-    Summon   // Joined through druidry
+    Summon,  // Joined through druidry
+    Alchemy,
+    Engineering
 };
 
 const DefaultPlace = "the world";
 const Blank = "";
 
-var bool IsCraftingDruidry;
+var bool IsCrafting;
+var Origin CraftingOrigin;
 var int ArmySizeSnapshot;
 
 DefaultProperties
 {
     Id = "OriginStories"
-    IsCraftingDruidry = false;
+    IsCrafting = false;
+    CraftingOrigin = Default;
 }
 
 function OnInitialization()
@@ -52,6 +56,14 @@ function string GetIntroText(RPGTacPawn AddedPawn, optional Origin OriginStory =
     {
         IntroText = "{name} was summoned as a level {level} {class} in {place}.";
     }
+    else if(OriginStory == Alchemy)
+    {
+        IntroText = "{name} was created through the power of alchemy in {place}. They were originally a level {level} {class}.";
+    }
+    else if(OriginStory == Engineering)
+    {
+        IntroText = "{name} was originally built in {place} as a level {level} {class}.";
+    }
     else
     {
         IntroText = GetRandomizedDefaultIntroText();
@@ -67,16 +79,12 @@ function string GetIntroText(RPGTacPawn AddedPawn, optional Origin OriginStory =
 
 function string GetRandomizedDefaultIntroText()
 {
-    local int Selection;
-    Selection = Rand(3);
-
-    switch(Selection)
+    switch(Rand(3))
     {
         case 1:  return "{name} joined the army while the army was in {place}. They were originally a level {level} {class}.";
-        case 2:  return "{name} joined as a level {level} {class} while we were journeying in {place}.";
+        case 2:  return "{name} joined as a level {level} {class} while the army was journeying in {place}.";
         default: return "{name} originally joined as a level {level} {class} while the army was traveling through {place}.";
     }
-
 }
 
 // TODO: Move this out to a configurable file
@@ -98,58 +106,72 @@ function string GetSpecialText(RPGTacPawn AddedPawn)
 
 function OnCauseEvent(optional Name Event)
 {
-    local Origin OriginStory;
+    // local Origin OriginStory;
     local int i;
 
     if(Event == 'CraftingDruidry')
     {
-        IsCraftingDruidry = true;
+        IsCrafting = true;
+        CraftingOrigin = Summon;
+        ArmySizeSnapshot = Manager.Army.length;
+    }
+    else if(Event == 'CraftingAlchemy')
+    {
+        IsCrafting = true;
+        CraftingOrigin = Alchemy;
+        ArmySizeSnapshot = Manager.Army.length;
+    }
+    else if(Event == 'CraftingEngineering')
+    {
+        IsCrafting  = true;
+        CraftingOrigin = Engineering;
         ArmySizeSnapshot = Manager.Army.length;
     }
     else if(Event == 'ShopClosed')
     {
-        for(i = ArmySizeSnapshot; i < Manager.Army.Length; i++)
+        if(IsCrafting)
         {
-            if(Manager.Army[i].CharacterNotes == Blank) // Prevent double
+            // There's a loop here because it's possible for players
+            // to create/summon new characters more than once in the
+            // crafting menu
+            for(i = ArmySizeSnapshot; i < Manager.Army.Length; i++)
             {
-                OriginStory = Default;
-
-                if(IsCraftingDruidry)
+                if(Manager.Army[i].CharacterNotes == Blank) // To prevent adding notes twice (through OnPawnAdded())
                 {
-                    OriginStory = Summon;
+                    AddOriginStory(Manager.Army[i], CraftingOrigin);
                 }
-
-                AddOriginStory(Manager.Army[i], OriginStory);
             }
         }
 
-        ToggleCraftingFlags(false);
+        IsCrafting  = false;
+        CraftingOrigin = Default;
         ArmySizeSnapshot = Manager.Army.length;
+    }
+    else
+    {
+        // DEBUG
+        `log("Backstories: Unhandled OnCauseEvent() = " $ Event);
     }
 }
 
 function OnEnterArea()
 {
-    ToggleCraftingFlags(false);
+    IsCrafting  = false;
+    CraftingOrigin = Default;
     ArmySizeSnapshot = Manager.Army.length;
 }
 
 function OnEnterWorldMap()
 {
-    ToggleCraftingFlags(false);
+    IsCrafting  = false;
+    CraftingOrigin = Default;
     ArmySizeSnapshot = Manager.Army.length;
-}
-
-private function ToggleCraftingFlags(bool Value)
-{
-    IsCraftingDruidry = Value;
 }
 
 private function bool StartsWith(Name LevelName, string Substring)
 {
     return InStr(LevelName, Substring) == 0;
 }
-
 
 private function string GetCurrentPlaceName()
 {
@@ -181,7 +203,7 @@ private function string GetCurrentPlaceName()
 // names (eg. cities or points of interest) should be at the top.
 //
 // If there is no friendly name for the level specified this function
-// will return an empty string.
+// will purposely return an empty string.
 //
 // TODO: Move this out to a configurable file
 private function string ToFriendlyName(Name LevelName)
@@ -213,9 +235,6 @@ private function string ToFriendlyName(Name LevelName)
         return "Yamatai";
     }
     
-
-
-
     // -------- Confirmed and tested level names --------
     
     // Snow areas
@@ -242,7 +261,7 @@ private function string ToFriendlyName(Name LevelName)
         return "the Ittihad al-Janub";
     }
 
-    // Shadow names
+    // Shadow areas
     else if(StartsWith(LevelName, "Main_Shadow_World")) // Anchor
     {
         return "the Shadowlands";
