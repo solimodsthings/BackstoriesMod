@@ -1,19 +1,21 @@
 // [Backstories Mod (2021)]
 
-class BackstoriesModListener extends EventListener;
+class BackstoriesModListener extends BackStoriesModContent;
+
+const DefaultPlace = "the world";
+const Blank = "";
 
 enum Origin
 {
     Default, // Basically humans
     Summon,  // Joined through druidry
     Alchemy,
-    Engineering
+    Engineering,
+    Necromancy
 };
 
-const DefaultPlace = "the world";
-const Blank = "";
-
 var bool IsCrafting;
+var bool newCampaignStarted;
 var Origin CraftingOrigin;
 var int ArmySizeSnapshot;
 
@@ -21,92 +23,64 @@ DefaultProperties
 {
     Id = "OriginStories"
     IsCrafting = false;
+    newCampaignStarted = true;
     CraftingOrigin = Default;
 }
 
-function OnInitialization()
+// This is an Events Mod listener function. 
+// Called when this listener is registered with Events Mod.
+function OnInitialization() 
 {
     ArmySizeSnapshot = Manager.Army.length;
 }
 
+// This is an Events Mod listener function. 
+// Called when AddPawn() is called in the player controller
+// and it returns true.
 function OnPawnAdded(RPGTacPawn AddedPawn) 
 {
-
     if(AddedPawn.CharacterNotes == Blank)
     {
         AddOriginStory(AddedPawn);
     }
 
     ArmySizeSnapshot = Manager.Army.length;
-    
 }
 
-function AddOriginStory(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
+// This is an Events Mod listener function. 
+// Called when player enters any area that's not
+// the world map.
+function OnEnterArea()
 {
-    AddedPawn.CharacterNotes $= GetIntroText(AddedPawn, OriginStory);
-    AddedPawn.CharacterNotes $= GetSpecialText(AddedPawn);
+    IsCrafting  = false;
+    CraftingOrigin = Default;
+    ArmySizeSnapshot = Manager.Army.length;
 }
 
-// TODO: Move this out to a configurable file?
-function string GetIntroText(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
+// This is an Events Mod listener function. 
+// Called when player enters the world map.
+function OnEnterWorldMap()
 {
-    local string IntroText;
-
-    if(OriginStory == Summon)
-    {
-        IntroText = "{name} was summoned as a level {level} {class} in {place}.";
-    }
-    else if(OriginStory == Alchemy)
-    {
-        IntroText = "{name} was created through the power of alchemy in {place}. They were originally a level {level} {class}.";
-    }
-    else if(OriginStory == Engineering)
-    {
-        IntroText = "{name} was originally built in {place} as a level {level} {class}.";
-    }
-    else
-    {
-        IntroText = GetRandomizedDefaultIntroText();
-    }
-
-    IntroText = Repl(IntroText, "{name}",  AddedPawn.CharacterName);
-    IntroText = Repl(IntroText, "{level}", AddedPawn.CharacterLevel);
-    IntroText = Repl(IntroText, "{class}", AddedPawn.CharacterClasses[AddedPawn.CurrentCharacterClass].ClassName);
-    IntroText = Repl(IntroText, "{place}", GetCurrentPlaceName());
-
-    return IntroText $ " "; // Gotta always remember to add that trailing space
+    IsCrafting  = false;
+    CraftingOrigin = Default;
+    ArmySizeSnapshot = Manager.Army.length;
 }
 
-function string GetRandomizedDefaultIntroText()
+// This is an Events Mod listener function.
+// Called when a savefile is being loaded.
+function Deserialize(JSonObject ListenerData) 
 {
-    switch(Rand(3))
-    {
-        case 1:  return "{name} joined the army while the army was in {place}. They were originally a level {level} {class}.";
-        case 2:  return "{name} joined as a level {level} {class} while the army was journeying in {place}.";
-        default: return "{name} originally joined as a level {level} {class} while the army was traveling through {place}.";
-    }
+    // We use this function to check whether a new
+    // campaign is being started or not.
+    newCampaignStarted = false;
 }
 
-// TODO: Move this out to a configurable file
-function string GetSpecialText(RPGTacPawn AddedPawn)
-{
-    local string PawnName;
-    PawnName = AddedPawn.CharacterName;
-
-    if(PawnName == "Blih the Bonehead")
-    {
-        return "He was discovered in the basement of a House of Life. ";
-    }
-    else
-    {
-        return Blank;
-    }
-
-}
-
+// This is an Events Mod listener function. 
+// Called whenever a CauseEvent command is detected.
+// This is used to detect when the crafting menus
+// are opened or closed by player
 function OnCauseEvent(optional Name Event)
 {
-    // local Origin OriginStory;
     local int i;
 
     if(Event == 'CraftingDruidry')
@@ -123,8 +97,14 @@ function OnCauseEvent(optional Name Event)
     }
     else if(Event == 'CraftingEngineering')
     {
-        IsCrafting  = true;
+        IsCrafting = true;
         CraftingOrigin = Engineering;
+        ArmySizeSnapshot = Manager.Army.length;
+    }
+    else if(Event == 'CraftingNecromancy') // not tested yet
+    {
+        IsCrafting = true;
+        CraftingOrigin = Necromancy;
         ArmySizeSnapshot = Manager.Army.length;
     }
     else if(Event == 'ShopClosed')
@@ -147,25 +127,164 @@ function OnCauseEvent(optional Name Event)
         CraftingOrigin = Default;
         ArmySizeSnapshot = Manager.Army.length;
     }
+    /*
     else
     {
-        // DEBUG
-        `log("Backstories: Unhandled OnCauseEvent() = " $ Event);
+        `log("DEBUG: CauseEvent: $ " $ Event);
+    }
+    */
+
+}
+
+// Adds origin story text to the specified character's notes field.
+// The origin story differs depending on the Origin provided. The default
+// origin is the one used for new human recruits (ie. the ones you hire).
+private function AddOriginStory(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
+{
+    local string StarterCharacterText;
+    local string Notes;
+
+    StarterCharacterText = GetStarterCharacterText(AddedPawn);
+    Notes = Blank;
+
+    if(StarterCharacterText != Blank)
+    {
+        Notes $= StarterCharacterText;
+    }
+    else
+    {
+        Notes $= GetIntroText(AddedPawn, OriginStory);
+        Notes $= GetAdditionalContextText(AddedPawn);
+    }
+
+    Notes = Repl(Notes, "{name}",  AddedPawn.CharacterName);
+    Notes = Repl(Notes, "{level}", AddedPawn.CharacterLevel);
+    Notes = Repl(Notes, "{class}", AddedPawn.CharacterClasses[AddedPawn.CurrentCharacterClass].ClassName);
+    Notes = Repl(Notes, "{place}", GetCurrentPlaceName());
+    Notes = Repl(Notes, "{group}", GetGroupText());
+
+    AddedPawn.CharacterNotes $= Notes;
+
+}
+
+// Text that only applies to the starting party members
+private function string GetStarterCharacterText(RPGTacPawn Pawn)
+{
+    local RPGTacPawn Type;
+    Type = RPGTacPawn(Pawn.ObjectArchetype);
+
+    // note replacement text for class might not work here
+    switch(Type)
+    {
+        case Aya: return "{name} is the youngest daughter of House Furukawa and originally from Sunrise Falls.";
+        case AyaFairy: return GetStarterFairyText();
+        case Emi: return "{name} is a member of House Furukawa. She is the older sister of Aya and younger sister of Yumi.";
+        case Kakiko: return "{name} is originally from Sunrise Falls and a companion of the Furukawa sisters.";
+        case Yumi:  return "{name} is originally from Sunrise Falls. She is the eldest of the Furukawa sisters.";
+        default: return Blank;
+    } 
+}
+
+private function string GetStarterFairyText()
+{
+    if(newCampaignStarted)
+    {
+        newCampaignStarted = false;
+        return "{name} was born from a fairy bulb that Aya was taking care of in Sunrise Falls. It originally joined the {group} as a {class}.";
+    }
+    else
+    {
+        return Blank; // This will force normal druid origin text
     }
 }
 
-function OnEnterArea()
+// Generates text applies to recruits, including those who join via crafting
+// TODO: Move this out to a configurable file?
+private function string GetIntroText(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
 {
-    IsCrafting  = false;
-    CraftingOrigin = Default;
-    ArmySizeSnapshot = Manager.Army.length;
+    local string IntroText;
+
+    if(OriginStory == Summon)
+    {
+        IntroText = "{name} was summoned as a level {level} {class} in {place}.";
+    }
+    else if(OriginStory == Alchemy)
+    {
+        IntroText = "{name} was created through the power of alchemy in {place}. They were originally a level {level} {class}.";
+    }
+    else if(OriginStory == Engineering)
+    {
+        IntroText = "{name} was originally built in {place} as a level {level} {class}.";
+    }
+    else if(OriginStory == Necromancy)
+    {
+        IntroText = "{name} was brought to life in {place}. They originally joined the {group} as a level {level} {class}.";
+    }
+    else
+    {
+        switch(Rand(3))
+        {
+            case 1:  IntroText =  "{name} joined the {group} while the {group} was in {place}. They were originally a level {level} {class}."; break;
+            case 2:  IntroText =  "{name} joined as a level {level} {class} while the {group} was journeying in {place}."; break;
+            default: IntroText =  "{name} originally joined as a level {level} {class} while the {group} was traveling through {place}."; break;
+        }
+    }
+
+    return IntroText $ " "; // Gotta always remember to add that trailing space
 }
 
-function OnEnterWorldMap()
+// Generates some additional text for special recruits.
+// TODO: Move this out to a configurable file
+private function string GetAdditionalContextText(RPGTacPawn Pawn)
 {
-    IsCrafting  = false;
-    CraftingOrigin = Default;
-    ArmySizeSnapshot = Manager.Army.length;
+    local RPGTacPawn Type;
+    Type = RPGTacPawn(Pawn.ObjectArchetype);
+    
+    switch(Type)
+    {
+        case Asher: return Blank;
+        case Aya: return Blank; // Not required
+        case Bellamy: return Blank;
+        case BlihBonehead: return "He was discovered in the basement of a House of Life. ";
+        case Boneman: return Blank;
+        case Brady: return Blank;
+        case Caleb: return Blank;
+        case Cribbin: return Blank;
+        case Dresdid: return Blank;
+        case Emi: return Blank; // Not required
+        case Hari: return Blank;
+        case Harktavius: return Blank;
+        case Jacob: return Blank;
+        case Kakiko: return Blank; // Not required
+        case Kalakanda: return Blank;
+        case Kwame: return Blank;
+        case Lara: return Blank;
+        case Lucien: return Blank;
+        case Majken: return Blank;
+        case Malika: return Blank;
+        case Maximus: return Blank;
+        case Megumi: return Blank;
+        case Precious: return Blank;
+        case Profuse: return Blank;
+        case Rone: return Blank;
+        case Roto: return Blank;
+        case Tanu: return Blank;
+        case Wigglesworth: return Blank;
+        case Yumi: return Blank; // Not required
+        default: return Blank;
+    } 
+}
+
+private function string GetGroupText()
+{
+    if(Manager.Army.length < 20)
+    {
+        return "group";
+    }
+    else
+    {
+        return "army";
+    }
 }
 
 private function bool StartsWith(Name LevelName, string Substring)
@@ -173,6 +292,10 @@ private function bool StartsWith(Name LevelName, string Substring)
     return InStr(LevelName, Substring) == 0;
 }
 
+// Attempts to guess where the player is currently located
+// for the purposes of generating origin story text. It can be
+// a little tricky as there can be multiple levels active at the
+// same time.
 private function string GetCurrentPlaceName()
 {
     local LevelStreaming Level;
@@ -225,7 +348,7 @@ private function string ToFriendlyName(Name LevelName)
     {
         return "Utakawa";
     }
-    else if(StartsWith(LevelName, "Main_Sunrise")) // TODO
+    else if(LevelName == 'Main_SunriseFalls') // TODO
     {
         return "Sunrise Falls";
     }
