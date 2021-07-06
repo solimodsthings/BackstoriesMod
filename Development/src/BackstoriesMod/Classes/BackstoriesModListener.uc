@@ -21,7 +21,7 @@ var int ArmySizeSnapshot;
 
 DefaultProperties
 {
-    Id = "OriginStories"
+    Id = "OriginStory"
     IsCrafting = false;
     newCampaignStarted = true;
     CraftingOrigin = Default;
@@ -143,6 +143,7 @@ private function AddOriginStory(RPGTacPawn AddedPawn, optional Origin OriginStor
 {
     local string StarterCharacterText;
     local string Notes;
+    local string Quote;
 
     StarterCharacterText = GetStarterCharacterText(AddedPawn);
     Notes = Blank;
@@ -155,7 +156,15 @@ private function AddOriginStory(RPGTacPawn AddedPawn, optional Origin OriginStor
     {
         Notes $= GetIntroText(AddedPawn, OriginStory);
         Notes $= GetAdditionalContextText(AddedPawn);
+
+        Quote = GetCharacterQuote(AddedPawn);
+
+        if(Quote != Blank)
+        {
+            Notes $= "\n\n''" $ Quote $ "''";
+        }
     }
+
 
     Notes = Repl(Notes, "{name}",  AddedPawn.CharacterName);
     Notes = Repl(Notes, "{level}", AddedPawn.CharacterLevel);
@@ -173,24 +182,40 @@ private function string GetStarterCharacterText(RPGTacPawn Pawn)
     local RPGTacPawn Type;
     Type = RPGTacPawn(Pawn.ObjectArchetype);
 
-    // note replacement text for class might not work here
+    // The quotes are from actual speech options
     switch(Type)
     {
-        case Aya: return "{name} is the youngest daughter of House Furukawa and originally from Sunrise Falls.";
-        case AyaFairy: return GetStarterFairyText();
-        case Emi: return "{name} is a member of House Furukawa. She is the older sister of Aya and younger sister of Yumi.";
-        case Kakiko: return "{name} is originally from Sunrise Falls and a companion of the Furukawa sisters.";
-        case Yumi:  return "{name} is originally from Sunrise Falls. She is the eldest of the Furukawa sisters.";
+        case Aya: return "{name} is the youngest daughter of House Furukawa and originally from Sunrise Falls." 
+                $ "\n\n''I'll try my best.''";
+        case Emi: return "{name} is a member of House Furukawa. She is the older sister of Aya and younger sister of Yumi." 
+                $ "\n\n''Now you'll see what I can do.''";
+        case Yumi:  return "{name} is originally from Sunrise Falls. She is the eldest of the Furukawa sisters." 
+                $ "\n\n''Our cause is just. God will see us to victory.''";
+        case Kakiko: return "{name} is originally from Sunrise Falls and a companion of the Furukawa sisters." 
+                $ "\n\n''Arooo!''";
+        case AyaFairy: return GetStarterFairyText(Pawn);           
         default: return Blank;
     } 
 }
 
-private function string GetStarterFairyText()
+private function string GetStarterFairyText(RPGTacPawn Fairy)
 {
+    local string FairyText;
+    local string Quote;
+
     if(newCampaignStarted)
     {
         newCampaignStarted = false;
-        return "{name} was born from a fairy bulb that Aya was taking care of in Sunrise Falls. It originally joined the {group} as a {class}.";
+        FairyText = "{name} was born from Aya's fairy bulb and originally joined the {group} as a {class}.";
+
+        Quote = GetCharacterQuote(Fairy);
+
+        if(Quote != Blank)
+        {
+            FairyText $= "\n\n''" $ Quote $ "''";
+        }
+
+        return FairyText;
     }
     else
     {
@@ -243,23 +268,23 @@ private function string GetAdditionalContextText(RPGTacPawn Pawn)
     switch(Type)
     {
         case Asher: return Blank;
-        case Aya: return Blank; // Not required
+        // case Aya: return Blank; // Not required
         case Bellamy: return Blank;
         case BlihBonehead: return "He was discovered in the basement of a House of Life. ";
         case Boneman: return Blank;
-        case Brady: return Blank;
-        case Caleb: return Blank;
+        case Brady: return "He and his brother Caleb once sold everything they owned to order a legendary wheel of cheese.";
+        case Caleb: return "He and his brother Brady have pledged their lives to the legendary Cheese Finder, Aya.";
         case Cribbin: return Blank;
         case Dresdid: return Blank;
-        case Emi: return Blank; // Not required
+        // case Emi: return Blank; // Not required
         case Hari: return Blank;
         case Harktavius: return Blank;
         case Jacob: return Blank;
-        case Kakiko: return Blank; // Not required
+        // case Kakiko: return Blank; // Not required
         case Kalakanda: return Blank;
-        case Kwame: return Blank;
+        case Kwame: return "{name} is a professor and was originally hired by House Furukawa to tutor Aya, Emi, and Yumi.";
         case Lara: return Blank;
-        case Lucien: return Blank;
+        case Lucien: return "He was once a captain of House Furukawa and served under Salah.";
         case Majken: return Blank;
         case Malika: return Blank;
         case Maximus: return Blank;
@@ -270,9 +295,38 @@ private function string GetAdditionalContextText(RPGTacPawn Pawn)
         case Roto: return Blank;
         case Tanu: return Blank;
         case Wigglesworth: return Blank;
-        case Yumi: return Blank; // Not required
+        // case Yumi: return Blank; // Not required
         default: return Blank;
     } 
+}
+
+private function string GetCharacterQuote(RPGTacPawn Pawn)
+{
+    local array<string> QuoteOptions;
+    local string Quote;
+    local int Count;
+
+    foreach Pawn.SpeechOptions.WhenMadeSquadLeader_Localized(Quote)
+    {
+        QuoteOptions.AddItem(Quote);
+    }
+
+    foreach Pawn.SpeechOptions.Attacking_Localized(Quote)
+    {
+        QuoteOptions.AddItem(Quote);
+    }
+
+    Quote = Blank;
+
+    Count = Pawn.SpeechOptions.WhenMadeSquadLeader_Localized.length + Pawn.SpeechOptions.Attacking_Localized.length;
+
+    if(Count > 0)
+    {
+        Quote = QuoteOptions[Rand(Count)];
+    }
+
+    return Quote;
+    
 }
 
 private function string GetGroupText()
@@ -348,11 +402,6 @@ private function string ToFriendlyName(Name LevelName)
     {
         return "Utakawa";
     }
-    else if(LevelName == 'Main_SunriseFalls') // TODO
-    {
-        return "Sunrise Falls";
-    }
-
     else if(StartsWith(LevelName, "Main_Yamatai")) // TODO
     {
         return "Yamatai";
@@ -360,8 +409,18 @@ private function string ToFriendlyName(Name LevelName)
     
     // -------- Confirmed and tested level names --------
     
+    // Starter areas
+    else if(LevelName == 'Main_Boreland')
+    {
+        return "Ellismuir";
+    }
+    else if(LevelName == 'Main_SunriseFalls')
+    {
+        return "Sunrise Falls";
+    }
+
     // Snow areas
-    else if(StartsWith(LevelName, "Main_SnowWorld")) // TODO
+    else if(StartsWith(LevelName, "Main_SnowWorld"))
     {
         return "the Icy Reach";
     }
