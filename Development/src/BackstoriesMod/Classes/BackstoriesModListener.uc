@@ -145,26 +145,25 @@ private function AddOriginStory(RPGTacPawn AddedPawn, optional Origin OriginStor
     local string Notes;
     local string Quote;
 
-    StarterCharacterText = GetStarterCharacterText(AddedPawn);
     Notes = Blank;
+    StarterCharacterText = GetStarterCharacterText(AddedPawn);
 
-    if(StarterCharacterText != Blank)
+    if(StarterCharacterText != Blank) // If it comes back blank, they weren't a starter character
     {
         Notes $= StarterCharacterText;
     }
     else
     {
-        Notes $= GetIntroText(AddedPawn, OriginStory);
-        Notes $= GetAdditionalContextText(AddedPawn);
+        Notes $= GetRecruitableCharacterText(AddedPawn, OriginStory);
+        Notes $= GetSpecialCharacterText(AddedPawn); // This can come back blank and it's ok
 
-        Quote = GetCharacterQuote(AddedPawn);
+        Quote = GetRandomQuote(AddedPawn);
 
         if(Quote != Blank)
         {
             Notes $= "\n\n''" $ Quote $ "''";
         }
     }
-
 
     Notes = Repl(Notes, "{name}",  AddedPawn.CharacterName);
     Notes = Repl(Notes, "{level}", AddedPawn.CharacterLevel);
@@ -208,7 +207,7 @@ private function string GetStarterFairyText(RPGTacPawn Fairy)
         newCampaignStarted = false;
         FairyText = "{name} was born from Aya's fairy bulb and originally joined the {group} as a {class}.";
 
-        Quote = GetCharacterQuote(Fairy);
+        Quote = GetRandomQuote(Fairy);
 
         if(Quote != Blank)
         {
@@ -225,7 +224,7 @@ private function string GetStarterFairyText(RPGTacPawn Fairy)
 
 // Generates text applies to recruits, including those who join via crafting
 // TODO: Move this out to a configurable file?
-private function string GetIntroText(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
+private function string GetRecruitableCharacterText(RPGTacPawn AddedPawn, optional Origin OriginStory = Default)
 {
     local string IntroText;
 
@@ -243,7 +242,11 @@ private function string GetIntroText(RPGTacPawn AddedPawn, optional Origin Origi
     }
     else if(OriginStory == Necromancy)
     {
-        IntroText = "{name} was brought to life in {place}. They originally joined the {group} as a level {level} {class}.";
+        switch(Rand(2))
+        {
+            case 1:  IntroText = "{name} was brought to life in {place}. They originally joined the {group} as a level {level} {class}."; break;
+            default: IntroText = "{name} was reanimated in {place} as a level {level} {class}."; break;
+        }
     }
     else
     {
@@ -260,47 +263,37 @@ private function string GetIntroText(RPGTacPawn AddedPawn, optional Origin Origi
 
 // Generates some additional text for special recruits.
 // TODO: Move this out to a configurable file
-private function string GetAdditionalContextText(RPGTacPawn Pawn)
+private function string GetSpecialCharacterText(RPGTacPawn Pawn)
 {
     local RPGTacPawn Type;
     Type = RPGTacPawn(Pawn.ObjectArchetype);
     
     switch(Type)
     {
-        case Asher: return Blank;
-        // case Aya: return Blank; // Not required
-        case Bellamy: return Blank;
+        case Asher: return "He is also known as Asher of Balek.";
+        case Bellamy: return "He is also known as the bandit prince.";
         case BlihBonehead: return "He was discovered in the basement of a House of Life. ";
-        case Boneman: return Blank;
+        case Boneman: return "He wanted to go on an adventure after being reanimated.";
         case Brady: return "He and his brother Caleb once sold everything they owned to order a legendary wheel of cheese.";
         case Caleb: return "He and his brother Brady have pledged their lives to the legendary Cheese Finder, Aya.";
-        case Cribbin: return Blank;
-        case Dresdid: return Blank;
-        // case Emi: return Blank; // Not required
-        case Hari: return Blank;
-        case Harktavius: return Blank;
-        case Jacob: return Blank;
-        // case Kakiko: return Blank; // Not required
-        case Kalakanda: return Blank;
-        case Kwame: return "{name} is a professor and was originally hired by House Furukawa to tutor Aya, Emi, and Yumi.";
-        case Lara: return Blank;
+        case Dresdid: return "He was once in the business of revenge.";
+        case Hari: return "{name} is an old friend of Salah. He also known as Bey Hariprasad or simply Uncle Hari to the Furukawa sisters.";
+        case Harktavius: return "{name} joined the Furukawa sisters looking to go into the Shadowlands himself.";
+        case Jacob: return "{name}'s wife, Maise, became ill after staying in the Shadowlands for too long. ";
+        case Kalakanda: return "He once adventured the deserts with Salah and Hari.";
+        case Kwame: return "{name} is a professor and the former tutor of Aya, Emi, and Yumi.";
         case Lucien: return "He was once a captain of House Furukawa and served under Salah.";
-        case Majken: return Blank;
-        case Malika: return Blank;
-        case Maximus: return Blank;
-        case Megumi: return Blank;
-        case Precious: return Blank;
-        case Profuse: return Blank;
-        case Rone: return Blank;
-        case Roto: return Blank;
-        case Tanu: return Blank;
-        case Wigglesworth: return Blank;
-        // case Yumi: return Blank; // Not required
+        case Malika: return "She has important insight regarding Master Griswold's projects.";
+        case Maximus: return "He was once the greatest fighter in the Scrapyard arena.";
+        case Precious: return "He once promised to take his cat on an adventure, but waited too long.";
+        case Profuse: return "He is a connoisseur of Ittihadi currant wine.";
+        case Roto: return "He was once an adventurer wandering Ittihad.";
+        case Wigglesworth: return "She is also known as Professor Edwina {name}.";
         default: return Blank;
     } 
 }
 
-private function string GetCharacterQuote(RPGTacPawn Pawn)
+private function string GetRandomQuote(RPGTacPawn Pawn)
 {
     local array<string> QuoteOptions;
     local string Quote;
@@ -331,7 +324,7 @@ private function string GetCharacterQuote(RPGTacPawn Pawn)
 
 private function string GetGroupText()
 {
-    if(Manager.Army.length < 20)
+    if(Manager.Army.length < 30)
     {
         return "group";
     }
