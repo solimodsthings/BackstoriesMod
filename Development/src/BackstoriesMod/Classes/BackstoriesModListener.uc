@@ -277,7 +277,7 @@ private function string GetSpecialCharacterText(RPGTacPawn Pawn)
         case Brady: return "He and his brother Caleb once sold everything they owned to order a legendary wheel of cheese.";
         case Caleb: return "He and his brother Brady have pledged their lives to the legendary Cheese Finder, Aya.";
         case Dresdid: return "He was once in the business of revenge.";
-        case Hari: return "{name} is an old friend of Salah. He also known as Bey Hariprasad or simply Uncle Hari to the Furukawa sisters.";
+        case Hari: return "{name} is an old friend of Salah. He is also known as Bey Hariprasad or simply Uncle Hari to the Furukawa sisters.";
         case Harktavius: return "{name} joined the Furukawa sisters looking to go into the Shadowlands himself.";
         case Jacob: return "{name}'s wife, Maise, became ill after staying in the Shadowlands for too long. ";
         case Kalakanda: return "He once adventured the deserts with Salah and Hari.";
