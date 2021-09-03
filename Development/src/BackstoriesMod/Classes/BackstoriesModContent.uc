@@ -1,5 +1,5 @@
 
-class BackStoriesModContent extends EventListener;
+class BackStoriesModContent extends Plugin;
 
 var RPGTacPawn Asher;
 var RPGTacPawn Aya;

@@ -1,9 +1,9 @@
 // [Backstories Mod (2021)]
 
-class BackstoriesModStart extends EventMutator;
+class BackstoriesModStart extends ModStart;
 
-function OnEventManagerCreated(EventManager Manager)
+function OnStart(CorePlayerController Core)
 {
-	Manager.AddListener(new class'BackstoriesModListener');
+  Core.AddPlugin(new class'BackstoriesModListener');
 }
 

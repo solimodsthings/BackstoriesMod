@@ -2,6 +2,7 @@
 
 class BackstoriesModListener extends BackStoriesModContent;
 
+
 const DefaultPlace = "the world";
 const Blank = "";
 
@@ -21,7 +22,7 @@ var int ArmySizeSnapshot;
 
 DefaultProperties
 {
-    Id = "OriginStory"
+    Id = "Backstories"
     IsCrafting = false;
     newCampaignStarted = true;
     CraftingOrigin = Default;
@@ -31,7 +32,7 @@ DefaultProperties
 // Called when this listener is registered with Events Mod.
 function OnInitialization() 
 {
-    ArmySizeSnapshot = Manager.Army.length;
+    ArmySizeSnapshot = Core.Army.length;
 }
 
 // This is an Events Mod listener function. 
@@ -44,7 +45,7 @@ function OnPawnAdded(RPGTacPawn AddedPawn)
         AddOriginStory(AddedPawn);
     }
 
-    ArmySizeSnapshot = Manager.Army.length;
+    ArmySizeSnapshot = Core.Army.length;
 }
 
 // This is an Events Mod listener function. 
@@ -54,7 +55,7 @@ function OnEnterArea()
 {
     IsCrafting  = false;
     CraftingOrigin = Default;
-    ArmySizeSnapshot = Manager.Army.length;
+    ArmySizeSnapshot = Core.Army.length;
 }
 
 // This is an Events Mod listener function. 
@@ -63,7 +64,7 @@ function OnEnterWorldMap()
 {
     IsCrafting  = false;
     CraftingOrigin = Default;
-    ArmySizeSnapshot = Manager.Army.length;
+    ArmySizeSnapshot = Core.Army.length;
 }
 
 // This is an Events Mod listener function.
@@ -87,25 +88,25 @@ function OnCauseEvent(optional Name Event)
     {
         IsCrafting = true;
         CraftingOrigin = Summon;
-        ArmySizeSnapshot = Manager.Army.length;
+        ArmySizeSnapshot = Core.Army.length;
     }
     else if(Event == 'CraftingAlchemy')
     {
         IsCrafting = true;
         CraftingOrigin = Alchemy;
-        ArmySizeSnapshot = Manager.Army.length;
+        ArmySizeSnapshot = Core.Army.length;
     }
     else if(Event == 'CraftingEngineering')
     {
         IsCrafting = true;
         CraftingOrigin = Engineering;
-        ArmySizeSnapshot = Manager.Army.length;
+        ArmySizeSnapshot = Core.Army.length;
     }
     else if(Event == 'CraftingNecromancy') // not tested yet
     {
         IsCrafting = true;
         CraftingOrigin = Necromancy;
-        ArmySizeSnapshot = Manager.Army.length;
+        ArmySizeSnapshot = Core.Army.length;
     }
     else if(Event == 'ShopClosed')
     {
@@ -114,18 +115,18 @@ function OnCauseEvent(optional Name Event)
             // There's a loop here because it's possible for players
             // to create/summon new characters more than once in the
             // crafting menu
-            for(i = ArmySizeSnapshot; i < Manager.Army.Length; i++)
+            for(i = ArmySizeSnapshot; i < Core.Army.Length; i++)
             {
-                if(Manager.Army[i].CharacterNotes == Blank) // To prevent adding notes twice (through OnPawnAdded())
+                if(Core.Army[i].CharacterNotes == Blank) // To prevent adding notes twice (through OnPawnAdded())
                 {
-                    AddOriginStory(Manager.Army[i], CraftingOrigin);
+                    AddOriginStory(Core.Army[i], CraftingOrigin);
                 }
             }
         }
 
         IsCrafting  = false;
         CraftingOrigin = Default;
-        ArmySizeSnapshot = Manager.Army.length;
+        ArmySizeSnapshot = Core.Army.length;
     }
     /*
     else
@@ -324,7 +325,7 @@ private function string GetRandomQuote(RPGTacPawn Pawn)
 
 private function string GetGroupText()
 {
-    if(Manager.Army.length < 30)
+    if(Core.Army.length < 30)
     {
         return "group";
     }
@@ -348,13 +349,15 @@ private function string GetCurrentPlaceName()
     local LevelStreaming Level;
     local string PlaceName;
     local int i;
-
-    for(i = Manager.World.StreamingLevels.Length - 1; i >= 0 ; i--)
+    
+    for(i = Core.World.StreamingLevels.Length - 1; i >= 0 ; i--)
     {
-        Level = Manager.World.StreamingLevels[i];
-
+        
+        Level = Core.World.StreamingLevels[i];
+        
         if (Level != None && (Level.bIsVisible || Level.bHasLoadRequestPending))
         {
+            
             PlaceName = ToFriendlyName(Level.PackageName);
             
             // If there isn't a name available, continue and check the next streaming level
@@ -362,8 +365,11 @@ private function string GetCurrentPlaceName()
             {
                 return PlaceName;
             }
+            
         }
+        
     }
+     
 
     return DefaultPlace;
 }
@@ -387,21 +393,29 @@ private function string ToFriendlyName(Name LevelName)
 
     // -------- Unconfirmed, untested level names --------
     
+    
+    // -------- Confirmed and tested level names --------
+    
+    /* // Doesn't appear to be a way to recruit in Satsuma
     else if(StartsWith(LevelName, "Main_Satsuma")) // TODO
     {
         return "Satsuma";
     }
-    else if(StartsWith(LevelName, "Main_Utakawa") || StartsWith(LevelName, "Main_Yamatai_Utakawa")) // TODO
+     */
+    else if(StartsWith(LevelName, "Main_Utakawa") || StartsWith(LevelName, "Main_Yamatai_Utakawa"))
     {
         return "Utakawa";
     }
-    else if(StartsWith(LevelName, "Main_Yamatai")) // TODO
+    else if(StartsWith(LevelName, "Main_ImperialCity") || StartsWith(LevelName, "Main_Yamatai_Imperial"))
+    {
+        return "the Imperial City of Yamatai";
+    }
+    else if(StartsWith(LevelName, "Main_Yamatai"))
     {
         return "Yamatai";
     }
     
-    // -------- Confirmed and tested level names --------
-    
+
     // Starter areas
     else if(LevelName == 'Main_Boreland')
     {
