@@ -390,18 +390,26 @@ private function string ToFriendlyName(Name LevelName)
     {
         return Blank;
     }
-
-    // -------- Unconfirmed, untested level names --------
     
-    
-    // -------- Confirmed and tested level names --------
-    
-    /* // Doesn't appear to be a way to recruit in Satsuma
-    else if(StartsWith(LevelName, "Main_Satsuma")) // TODO
+    // Northern Shores
+    else if(StartsWith(LevelName, "Main_Halgdalir"))
     {
-        return "Satsuma";
+        return "Halgdalir";
     }
-     */
+    else if(StartsWith(LevelName, "Main_Grenafylki"))
+    {
+        return "Grenafylki";
+    }
+    else if(StartsWith(LevelName, "Main_Snow_DruidGrove"))
+    {
+        return "the Druid Grove";
+    }
+    else if(LevelName == 'Main_SnowWorld_02')
+    {
+        return "the Northern Shores";
+    }
+
+    // Yamatai (Satsuma is not listed here because you can't recruit anyone in that town)
     else if(StartsWith(LevelName, "Main_Utakawa") || StartsWith(LevelName, "Main_Yamatai_Utakawa"))
     {
         return "Utakawa";
@@ -426,13 +434,13 @@ private function string ToFriendlyName(Name LevelName)
         return "Sunrise Falls";
     }
 
-    // Snow areas
-    else if(StartsWith(LevelName, "Main_SnowWorld"))
+    // Icy Reach
+    else if(LevelName == 'Main_SnowWorld_01' || StartsWith(LevelName, "Main_IcyReach_Castle"))
     {
         return "the Icy Reach";
     }
 
-    // Desert areas
+    // Ittihad al-Janub
     else if(LevelName == 'Main_Desert_Scrapyard')
     {
         return "the Scrapyard";
@@ -450,7 +458,7 @@ private function string ToFriendlyName(Name LevelName)
         return "the Ittihad al-Janub";
     }
 
-    // Shadow areas
+    // Shadowlands
     else if(StartsWith(LevelName, "Main_Shadow_World")) // Anchor
     {
         return "the Shadowlands";
