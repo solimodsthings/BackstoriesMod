@@ -1,5 +1,5 @@
 
-class BackStoriesModContent extends Plugin;
+class OriginTextContent extends Plugin;
 
 var RPGTacPawn Asher;
 var RPGTacPawn Aya;

@@ -1,6 +1,6 @@
 // [Backstories Mod (2021)]
 
-class BackstoriesModListener extends BackStoriesModContent;
+class OriginTextListener extends OriginTextContent;
 
 
 const DefaultPlace = "the world";
@@ -22,7 +22,7 @@ var int ArmySizeSnapshot;
 
 DefaultProperties
 {
-    Id = "Backstories"
+    Id = "EnhancedRecruits.OriginText"
     IsCrafting = false;
     newCampaignStarted = true;
     CraftingOrigin = Default;
