@@ -16,7 +16,7 @@ enum Origin
 };
 
 var bool IsCrafting;
-var bool newCampaignStarted;
+// var bool newCampaignStarted;
 var Origin CraftingOrigin;
 var int ArmySizeSnapshot;
 
@@ -24,7 +24,7 @@ DefaultProperties
 {
     Id = "EnhancedRecruits.OriginText"
     IsCrafting = false;
-    newCampaignStarted = true;
+    // newCampaignStarted = true;
     CraftingOrigin = Default;
 }
 
@@ -73,7 +73,7 @@ function Deserialize(JSonObject ListenerData)
 {
     // We use this function to check whether a new
     // campaign is being started or not.
-    newCampaignStarted = false;
+    // newCampaignStarted = false;
 }
 
 // This is an Events Mod listener function. 
@@ -203,9 +203,9 @@ private function string GetStarterFairyText(RPGTacPawn Fairy)
     local string FairyText;
     local string Quote;
 
-    if(newCampaignStarted)
+    if(GetCurrentPlaceName() == "Sunrise Falls")
     {
-        newCampaignStarted = false;
+        // newCampaignStarted = false;
         FairyText = "{name} was born from Aya's fairy bulb and originally joined the {group} as a {class}.";
 
         Quote = GetRandomQuote(Fairy);
