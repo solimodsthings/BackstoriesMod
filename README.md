@@ -1,4 +1,4 @@
 # Overview
-This is a work-in-progress mod for [Himeko Sutori](https://himekosutori.com/) that generates backstories or flavor text for allies. The backstories are written to each character's "Notes" field when they are recruited.
+This is a mod for [Himeko Sutori](https://himekosutori.com/) that generates origin text in a new recruit's "Notes" field. This mod is available through the Steam Workshop at:     steam://url/CommunityFilePage/2598765404
 
 ![](https://thumbs.gfycat.com/DelayedPalatableJuliabutterfly-size_restricted.gif)
